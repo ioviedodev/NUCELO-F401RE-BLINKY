@@ -15,6 +15,9 @@
   *
   ******************************************************************************
   */
+#include "ds18b20.h"
+#include "codes.h"
+#include "delay.h"
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -35,15 +38,15 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define DS18B20_PORT			GPIOA
-#define DS18B20_PIN				GPIO_PIN_7
-//CODE RESULTS
-#define SUCCESS					0
-#define INITIALIZATION_FAIL		-1
-//TIMES CHECK DATASHEET DS18B20
-#define M_RESET_PULSE_MINIMUN	480
-#define S_PRESENCE_PULSE		60  // Value between 60-240 uS
-#define M_RX_MINIMUN			480
+#define DS18B20_PORT			DATA_SENSOR_GPIO_Port
+#define DS18B20_PIN				DATA_SENSOR_Pin
+////CODE RESULTS
+//#define SUCCESS					0
+//#define INITIALIZATION_FAIL		-1
+////TIMES CHECK DATASHEET DS18B20
+//#define M_RESET_PULSE_MINIMUN	480
+//#define S_PRESENCE_PULSE		60  // Value between 60-240 uS
+//#define M_RX_MINIMUN			480
 
 /* USER CODE END PM */
 
@@ -62,59 +65,58 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
-void delay_us (uint16_t us);
-int8_t DS18B20_Initialization (void);
-void GPIO_Set_Pin_Output (GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
-void GPIO_Set_Pin_Input (GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
+//void delay_us (uint16_t us);
+//int8_t DS18B20_Initialization(uint8_t _DS18B20_PORT, uint8_t _DS18B20_PIN);
+//void GPIO_Set_Pin_Output (GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
+//void GPIO_Set_Pin_Input (GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-void GPIO_Set_Pin_Output (GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
-{
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-	GPIO_InitStruct.Pin = GPIO_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
-}
+//void GPIO_Set_Pin_Output (GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
+//{
+//	GPIO_InitTypeDef GPIO_InitStruct = {0};
+//	GPIO_InitStruct.Pin = GPIO_Pin;
+//	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+//	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+//	HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
+//}
+//
+//void GPIO_Set_Pin_Input (GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
+//{
+//	GPIO_InitTypeDef GPIO_InitStruct = {0};
+//	GPIO_InitStruct.Pin = GPIO_Pin;
+//	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+//	GPIO_InitStruct.Pull = GPIO_PULLUP;
+//	HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
+//}
 
-void GPIO_Set_Pin_Input (GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
-{
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-	GPIO_InitStruct.Pin = GPIO_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-	GPIO_InitStruct.Pull = GPIO_PULLUP;
-	HAL_GPIO_Init(GPIOx, &GPIO_InitStruct);
-}
-
-void delay_us (uint16_t us)
-{
-	__HAL_TIM_SET_COUNTER(&htim1,0);  // set the counter value a 0
-	while (__HAL_TIM_GET_COUNTER(&htim1) < us);  // wait for the counter to reach the us input in the parameter
-}
-
-
-int8_t DS18B20_Initialization(void)
-{
-	int8_t Response = 0;
-	HAL_GPIO_WritePin (RESULT_LED_GPIO_Port, RESULT_LED_Pin, 0);
-	GPIO_Set_Pin_Output(DS18B20_PORT, DS18B20_PIN);   // Set the pin as output
-	HAL_GPIO_WritePin (DS18B20_PORT, DS18B20_PIN, 0);  //BUS MASTER PULLING LOW
-	delay_us(M_RESET_PULSE_MINIMUN);   //Delay according to datasheet
+//void delay_us (uint16_t us)
+//{
+//	__HAL_TIM_SET_COUNTER(&htim1,0);  // set the counter value a 0
+//	while (__HAL_TIM_GET_COUNTER(&htim1) < us);  // wait for the counter to reach the us input in the parameter
+//}
 
 
-	GPIO_Set_Pin_Input(DS18B20_PORT, DS18B20_PIN); // Set the pin as input
-	delay_us(S_PRESENCE_PULSE);    //Delay according to datasheet
-
-	if (!(HAL_GPIO_ReadPin (DS18B20_PORT, DS18B20_PIN))) Response = SUCCESS;    //Check if the pin is low in that case the presence pulse is detected
-	else Response = INITIALIZATION_FAIL;
-	HAL_GPIO_WritePin (RESULT_LED_GPIO_Port, RESULT_LED_Pin, 1);
-	delay_us (M_RX_MINIMUN-S_PRESENCE_PULSE);
-
-	return Response;
-}
+//int8_t DS18B20_Initialization(uint8_t _DS18B20_PORT, uint8_t _DS18B20_PIN)
+//{
+//	int8_t Response = 0;
+//
+//	GPIO_Set_Pin_Output(_DS18B20_PORT, _DS18B20_PIN);   // Set the pin as output
+//	HAL_GPIO_WritePin (_DS18B20_PORT, _DS18B20_PIN, 0);  //BUS MASTER PULLING LOW
+//	delay_us(M_RESET_PULSE_MINIMUN);   //Delay according to datasheet
+//
+//	GPIO_Set_Pin_Input(_DS18B20_PORT, _DS18B20_PIN); // Set the pin as input
+//	delay_us(S_PRESENCE_PULSE);    //Delay according to datasheet
+//
+//	if (!(HAL_GPIO_ReadPin (_DS18B20_PORT, _DS18B20_PIN))) Response = SUCCESS;    //Check if the pin is low in that case the presence pulse is detected
+//	else Response = INITIALIZATION_FAIL;
+//
+//	delay_us (M_RX_MINIMUN-S_PRESENCE_PULSE);
+//
+//	return Response;
+//}
 
 /* USER CODE END 0 */
 
@@ -125,7 +127,8 @@ int8_t DS18B20_Initialization(void)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	int8_t result;
+	int8_t result=INITIALIZATION_FAIL;
+//	result++;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -150,23 +153,27 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim1);
-
+  delay_init(&htim1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  result=0;
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  result=DS18B20_Initialization();
+	  result=DS18B20_Initialization(DS18B20_PORT, DS18B20_PIN);
+	  if(result)
+	  {
 
+	  }
 //	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
 //	  delay_us (100);
 	  HAL_Delay(50);
   }
+
   /* USER CODE END 3 */
 }
 
@@ -311,7 +318,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, RESULT_LED_Pin|LED_TMR_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, DATA_SENSOR_Pin|RESULT_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -319,8 +326,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : RESULT_LED_Pin LED_TMR_Pin */
-  GPIO_InitStruct.Pin = RESULT_LED_Pin|LED_TMR_Pin;
+  /*Configure GPIO pins : DATA_SENSOR_Pin RESULT_LED_Pin */
+  GPIO_InitStruct.Pin = DATA_SENSOR_Pin|RESULT_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
