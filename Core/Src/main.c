@@ -42,7 +42,7 @@
 #define INITIALIZATION_FAIL		-1
 //TIMES CHECK DATASHEET DS18B20
 #define M_RESET_PULSE_MINIMUN	480
-#define S_PRESENCE_PULSE		80  // Value between 60-240 uS
+#define S_PRESENCE_PULSE		200  // Value between 60-240 uS
 #define M_RX_MINIMUN			480
 
 /* USER CODE END PM */
@@ -98,11 +98,12 @@ void delay_us (uint16_t us)
 
 int8_t DS18B20_Initialization(void)
 {
-	uint8_t Response = 0;
+	int8_t Response = 0;
 	GPIO_Set_Pin_Output(DS18B20_PORT, DS18B20_PIN);   // Set the pin as output
 	HAL_GPIO_WritePin (DS18B20_PORT, DS18B20_PIN, 0);  //BUS MASTER PULLING LOW
 	delay_us(M_RESET_PULSE_MINIMUN);   //Delay according to datasheet
 
+	HAL_GPIO_DeInit(DS18B20_PORT, DS18B20_PIN);
 	GPIO_Set_Pin_Input(DS18B20_PORT, DS18B20_PIN); // Set the pin as input
 	delay_us(S_PRESENCE_PULSE);    //Delay according to datasheet
 
@@ -123,7 +124,7 @@ int8_t DS18B20_Initialization(void)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	int8_t result;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -153,16 +154,16 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  result=0;
   while (1)
   {
-	  DS18B20_Initialization();
+    /* USER CODE END WHILE */
+    /* USER CODE BEGIN 3 */
+	  result=DS18B20_Initialization();
 
 //	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
 //	  delay_us (100);
 	  HAL_Delay(50);
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
 }
