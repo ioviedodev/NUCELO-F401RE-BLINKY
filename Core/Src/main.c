@@ -158,12 +158,13 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
+//  HAL_GPIO_WritePin (DS18B20_PORT, DS18B20_PIN, 0);
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
 	  result=DS18B20_Initialization(DS18B20_PORT, DS18B20_PIN);
 	  if(result)
 	  {
@@ -171,7 +172,7 @@ int main(void)
 	  }
 //	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
 //	  delay_us (100);
-	  HAL_Delay(50);
+//	  HAL_Delay(50);
   }
 
   /* USER CODE END 3 */
