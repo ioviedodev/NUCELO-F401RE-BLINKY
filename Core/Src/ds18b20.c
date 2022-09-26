@@ -15,6 +15,9 @@
 GPIO_TypeDef *	DS18B20_PORT;
 uint16_t 		DS18B20_PIN;
 bool			ds18b20_initialized;
+pin_mode		current_pin_mode;
+
+void DS18B20_dq_change_mode(GPIO_TypeDef *_DS18B20_PORT, uint16_t _DS18B20_PIN, pin_mode _mode);
 
 int8_t DS18B20_Initialization(GPIO_TypeDef *_DS18B20_PORT, uint16_t _DS18B20_PIN)
 {
@@ -23,11 +26,11 @@ int8_t DS18B20_Initialization(GPIO_TypeDef *_DS18B20_PORT, uint16_t _DS18B20_PIN
 	DS18B20_PIN=_DS18B20_PIN;
 	ds18b20_initialized = true;
 
-	GPIO_Set_Pin_Output(_DS18B20_PORT, _DS18B20_PIN);   // Set the pin as output
+	DS18B20_dq_change_mode(_DS18B20_PORT, _DS18B20_PIN, writing);
 	HAL_GPIO_WritePin (_DS18B20_PORT, _DS18B20_PIN, 0);  //BUS MASTER PULLING LOW
 	delay_us(M_RESET_PULSE_MINIMUN);   //Delay according to datasheet M_RESET_PULSE_MINIMUN
 
-	GPIO_Set_Pin_Input(_DS18B20_PORT, _DS18B20_PIN); // Set the pin as input
+	DS18B20_dq_change_mode(_DS18B20_PORT, _DS18B20_PIN, reading);
 	delay_us(S_PRESENCE_PULSE);    //Delay according to datasheet
 
 
@@ -40,49 +43,74 @@ int8_t DS18B20_Initialization(GPIO_TypeDef *_DS18B20_PORT, uint16_t _DS18B20_PIN
 }
 
 
-int8_t DS18B20_write(uint8_t _bit)
+int8_t DS18B20_write_byte(uint8_t _byte_data)
 {
+	uint8_t index_bit=0;
+	uint16_t mask=0;
+
+	DS18B20_dq_change_mode(DS18B20_PORT, DS18B20_PIN, writing);
 	if(!ds18b20_initialized) return NO_INITIALIZED;
 
-	if(_bit==0)
+	for(index_bit=0; index_bit<SIZE_BYTE_IN_BITS; index_bit++)
 	{
-		HAL_GPIO_WritePin (DS18B20_PORT, DS18B20_PIN, 0);
-		delay_us(M_WRITE_0_WAIT);
+		mask=1<<index_bit;
+		DS18B20_dq_change_mode(DS18B20_PORT, DS18B20_PIN, writing);
+		if((_byte_data & mask)==mask)
+		{// write one bit
+			HAL_GPIO_WritePin (DS18B20_PORT, DS18B20_PIN, 0);
+			delay_us(M_WRITE_1_WAIT);
+		}
+		else
+		{//write zero bit
+			HAL_GPIO_WritePin (DS18B20_PORT, DS18B20_PIN, 0);
+			delay_us(M_WRITE_0_WAIT);
+		}
+		DS18B20_dq_change_mode(DS18B20_PORT, DS18B20_PIN, reading);
+		delay_us(M_READ_MINIMUN_TS);
 	}
-	else
-	{
-		HAL_GPIO_WritePin (DS18B20_PORT, DS18B20_PIN, 0);
-		delay_us(M_WRITE_1_WAIT);
-		HAL_GPIO_WritePin (DS18B20_PORT, DS18B20_PIN, 1);
-		delay_us(M_WRITE_1_KEPT);
-	}
-
-	return 0;
+	DS18B20_dq_change_mode(DS18B20_PORT, DS18B20_PIN, reading);
+	return SUCCESS;
 }
 
-int8_t DS18B20_read(void)
+int8_t DS18B20_read_byte(void)
 {
-	delay_us(M_READ_WAIT);
-	if(!HAL_GPIO_ReadPin(DS18B20_PORT, DS18B20_PIN))
-	{//Tent to be zero
-		delay_us(M_READ_KEPT);
+	uint16_t index_bit=0;
+	uint8_t data_byte=0;
+
+	if(!ds18b20_initialized) return NO_INITIALIZED;
+
+	for (index_bit=0; index_bit<SIZE_BYTE_IN_BITS; index_bit++)
+	{
+		if(current_pin_mode!=writing)
+			DS18B20_dq_change_mode(DS18B20_PORT, DS18B20_PIN, writing);
+
+		HAL_GPIO_WritePin(DS18B20_PORT, DS18B20_PIN,0);
+		delay_us(M_READ_RECOVERY);
+
+		DS18B20_dq_change_mode(DS18B20_PORT, DS18B20_PIN, reading);
+		delay_us(M_READ_WAIT);
+
 		if(HAL_GPIO_ReadPin(DS18B20_PORT, DS18B20_PIN))
-		{//Confirm is zero
-			return READED_ZERO;
+		{
+			data_byte |= 1<<index_bit;  // read = 1
 		}
-		else
-			return NO_VALID_READING;
-	}
-	else
-	{//Tent to be one
-		delay_us(M_READ_KEPT);
-		if(HAL_GPIO_ReadPin(DS18B20_PORT, DS18B20_PIN))
-		{//Confirm is one
-			return READED_ONE;
-		}
-		else
-			return NO_VALID_READING;
+
+		delay_us(M_READ_MINIMUN_TS);
 	}
 
+	return data_byte;
 }
 
+
+void DS18B20_dq_change_mode(GPIO_TypeDef *_DS18B20_PORT, uint16_t _DS18B20_PIN, pin_mode _mode)
+{
+	if(_mode==reading)
+	{
+		GPIO_Set_Pin_Input(_DS18B20_PORT, _DS18B20_PIN); // Set the pin as input
+	}
+	else
+	{
+		GPIO_Set_Pin_Output(_DS18B20_PORT, _DS18B20_PIN); // Set the pin as output
+	}
+	current_pin_mode=_mode;
+}

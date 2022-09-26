@@ -16,6 +16,7 @@
   ******************************************************************************
   */
 #include "ds18b20.h"
+#include "ds18b20_definitions.h"
 #include "codes.h"
 #include "delay.h"
 /* USER CODE END Header */
@@ -128,6 +129,8 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	int8_t result=INITIALIZATION_FAIL;
+	uint16_t temperature=0, temperature_byte1=0, temperature_byte2=0;
+	float temperature_converted=0;
 //	result++;
   /* USER CODE END 1 */
 
@@ -166,9 +169,23 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	  result=DS18B20_Initialization(DS18B20_PORT, DS18B20_PIN);
-	  if(result)
+	  if(result==SUCCESS)
 	  {
+//		  DS18B20_write_byte(ROM_CMD_SKIP_ROM);
+//		  DS18B20_write_byte(CMD_CONVERT_T);
+//
+//		  HAL_Delay(800);
+//		  result=DS18B20_Initialization(DS18B20_PORT, DS18B20_PIN);
+//		  if(result==SUCCESS)
+//		  {
+			  DS18B20_write_byte(ROM_CMD_SKIP_ROM);
+			  DS18B20_write_byte(CMD_READ_SCRATCHPAD);
 
+			  temperature_byte1= DS18B20_read_byte();
+			  temperature_byte2= DS18B20_read_byte();
+			  temperature= (temperature_byte2<<8)|temperature_byte1;
+			  temperature_converted = (float)(temperature/16);
+//		  }
 	  }
 //	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
 //	  delay_us (100);
