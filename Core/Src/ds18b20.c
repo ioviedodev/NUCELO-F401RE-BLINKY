@@ -58,24 +58,24 @@ int8_t DS18B20_write_byte(uint8_t _byte_data)
 		if((_byte_data & mask)==mask)
 		{// write one bit
 			HAL_GPIO_WritePin (DS18B20_PORT, DS18B20_PIN, 0);
-			delay_us(M_WRITE_1_WAIT);
+			delay_us(M_RECOVERY_TIME+M_WRITE_1_KEPT_TS);
 		}
 		else
 		{//write zero bit
 			HAL_GPIO_WritePin (DS18B20_PORT, DS18B20_PIN, 0);
-			delay_us(M_WRITE_0_WAIT);
+			delay_us(M_RECOVERY_TIME+M_WRITE_0_WAIT);
 		}
-		DS18B20_dq_change_mode(DS18B20_PORT, DS18B20_PIN, reading);
+		DS18B20_dq_change_mode(DS18B20_PORT, DS18B20_PIN, reading);//It takes 9uS
 		delay_us(M_READ_MINIMUN_TS);
 	}
 	DS18B20_dq_change_mode(DS18B20_PORT, DS18B20_PIN, reading);
 	return SUCCESS;
 }
 
-int8_t DS18B20_read_byte(void)
+int16_t DS18B20_read_byte(void)
 {
 	uint16_t index_bit=0;
-	uint8_t data_byte=0;
+	int16_t data_byte=0;
 
 	if(!ds18b20_initialized) return NO_INITIALIZED;
 
@@ -83,13 +83,13 @@ int8_t DS18B20_read_byte(void)
 	{
 		if(current_pin_mode!=writing)
 			DS18B20_dq_change_mode(DS18B20_PORT, DS18B20_PIN, writing);
-
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
 		HAL_GPIO_WritePin(DS18B20_PORT, DS18B20_PIN,0);
 		delay_us(M_READ_RECOVERY);
-
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
 		DS18B20_dq_change_mode(DS18B20_PORT, DS18B20_PIN, reading);
-		delay_us(M_READ_WAIT);
-
+		delay_us(M_READ_WAIT-5);//Fix uTimes
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
 		if(HAL_GPIO_ReadPin(DS18B20_PORT, DS18B20_PIN))
 		{
 			data_byte |= 1<<index_bit;  // read = 1

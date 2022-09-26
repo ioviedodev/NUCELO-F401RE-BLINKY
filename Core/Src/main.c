@@ -129,7 +129,9 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	int8_t result=INITIALIZATION_FAIL;
-	uint16_t temperature=0, temperature_byte1=0, temperature_byte2=0;
+	int16_t temp_reg_byte1=0, temp_reg_byte2=0;
+	int16_t temp_reg=0;
+	int16_t temp_value=0;
 	float temperature_converted=0;
 //	result++;
   /* USER CODE END 1 */
@@ -171,21 +173,22 @@ int main(void)
 	  result=DS18B20_Initialization(DS18B20_PORT, DS18B20_PIN);
 	  if(result==SUCCESS)
 	  {
-//		  DS18B20_write_byte(ROM_CMD_SKIP_ROM);
-//		  DS18B20_write_byte(CMD_CONVERT_T);
-//
-//		  HAL_Delay(800);
-//		  result=DS18B20_Initialization(DS18B20_PORT, DS18B20_PIN);
-//		  if(result==SUCCESS)
-//		  {
+		  DS18B20_write_byte(ROM_CMD_SKIP_ROM);
+		  DS18B20_write_byte(CMD_CONVERT_T);
+
+		  HAL_Delay(800);
+		  result=DS18B20_Initialization(DS18B20_PORT, DS18B20_PIN);
+		  if(result==SUCCESS)
+		  {
 			  DS18B20_write_byte(ROM_CMD_SKIP_ROM);
 			  DS18B20_write_byte(CMD_READ_SCRATCHPAD);
 
-			  temperature_byte1= DS18B20_read_byte();
-			  temperature_byte2= DS18B20_read_byte();
-			  temperature= (temperature_byte2<<8)|temperature_byte1;
-			  temperature_converted = (float)(temperature/16);
-//		  }
+			  temp_reg_byte1= DS18B20_read_byte();
+			  temp_reg_byte2= DS18B20_read_byte();
+			  temp_reg= (temp_reg_byte2<<8)|temp_reg_byte1;
+			  temp_value = (temp_reg & MASK_REG_TEM_INTEGER)>> MOVE_REG_TEM_INTEGER;
+			  temperature_converted = (float)(temp_value/16);
+		  }
 	  }
 //	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_7);
 //	  delay_us (100);
